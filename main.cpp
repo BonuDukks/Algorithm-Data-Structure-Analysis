@@ -26,7 +26,6 @@ vector<int>* schoolSubtraction(vector<int> num1, vector<int> num2, int base) {
   }
 
   if (lengthDifference != 0) {
-    cout << "Yo" << endl;
     for (int i = 0; i < lengthDifference; i++) {
       shorterInt->insert(shorterInt->begin(), 0);
     }
