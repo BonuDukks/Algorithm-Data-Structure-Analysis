@@ -231,9 +231,7 @@ vector<int>* karatsuba(vector<int>* num1, vector<int>* num2, int base) {
   vector<int>* p3Part1 = schoolAddition(num1Left, num1Right, base);
   vector<int>* p3Part2 = schoolAddition(num2Left, num2Right, base);
   vector<int>* p3Part3 = karatsuba(p3Part1, p3Part2, base);
-  vector<int>* p3Part6 = schoolSubtraction(*p3Part3, *p1, base);
-
-  p3 = schoolSubtraction(*p3Part6, *p2, base);
+  p3 = schoolSubtraction(*p3Part3, *schoolAddition(*p1, *p2, base), base);
 
   for (int i = 0; i < indexRight * 2; i++) {
     p1->push_back(0);
