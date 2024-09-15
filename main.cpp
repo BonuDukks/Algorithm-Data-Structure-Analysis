@@ -192,10 +192,10 @@ class AvlTree {
 
       // If node has 2 children, get successor, switch values and dleete
       // succcessor.
-      Node* successor = findSuccessor(currentNode->getRightChild());
+      Node* successor = findSuccessor(currentNode);
       currentNode->setValue(successor->getValue());
-      currentNode->setRightChild(deleteNodeHelper(currentNode->getRightChild(),
-                                                  successor->getValue()));
+      currentNode->setLeftChild(
+          deleteNodeHelper(currentNode->getLeftChild(), successor->getValue()));
     }
 
     // Balance tree after deleting node.
@@ -204,10 +204,15 @@ class AvlTree {
 
   // Finds largest element which is smaller than the current root.
   Node* findSuccessor(Node* currentNode) {
-    while (currentNode->getLeftChild() != nullptr) {
-      currentNode = currentNode->getLeftChild();
+    // Go to the left subtree
+    Node* leftSubtree = currentNode->getLeftChild();
+
+    // Find the right-most child in the left subtree
+    while (leftSubtree->getRightChild() != nullptr) {
+      leftSubtree = leftSubtree->getRightChild();
     }
-    return currentNode;
+
+    return leftSubtree;
   }
 
   // Pre Order Printing
