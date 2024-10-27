@@ -6,83 +6,59 @@
 
 using namespace std;
 
+// Converts the char to an int that represents its cost.
 int charToCost(char c) {
-  if ('A' <= c && c <= 'Z') return c - 'A';  // 0 to 25
-  return c - 'a' + 26;                       // 26 to 51
+  if ('A' <= c && c <= 'Z') {
+    return c - 'A';  // 0 to 25
+  } else {
+    return c - 'a' + 26;  // 26 to 51
+  }
 }
 
+// Finds all cities in a given connected component.
 void dfs(int city, vector<vector<int>>& country, vector<bool>& visited,
          vector<int>& component) {
   visited[city] = true;
-  component.push_back(city);
-  for (int i = 0; i < country.size(); ++i) {
-    if (country[city][i] == 1 && !visited[i]) {
+  component.push_back(city);  // Adds the city to the component
+  for (int i = 0; i < country.size(); i++) {
+    if (country[city][i] == 1 &&
+        !visited[i]) {  // If there's a road connecting 2 cities, and city isn't
+                        // visited, call dfs on the city and mark it as visited.
       dfs(i, country, visited, component);
     }
   }
 }
 
 int main() {
-  string input;
-  getline(cin, input);
+  string countryInput, buildInput, destroyInput;
+  cin >> countryInput >> buildInput >> destroyInput;
 
-  // Split input
-  size_t first_space = input.find(' ');
-  size_t second_space = input.find(' ', first_space + 1);
-
-  string country_input = input.substr(0, first_space);
-  string build_input =
-      input.substr(first_space + 1, second_space - first_space - 1);
-  string destroy_input = input.substr(second_space + 1);
-
-  // Create 2D arrays
-  vector<vector<int>> country;
-  vector<vector<int>> build;
-  vector<vector<int>> destroy;
-
-  // Parse the country input
-  size_t n = 0;
-  for (char c : country_input) {
-    if (c == ',') n++;
-  }
-  n++;  // Count the last row
-
-  country.resize(n, vector<int>(n, 0));
-  build.resize(n, vector<int>(n, 0));
-  destroy.resize(n, vector<int>(n, 0));
-
-  // Fill the country adjacency matrix
-  size_t row = 0, col = 0;
-  for (char c : country_input) {
+  // Iterate over Input, if ',' read, new row.
+  int n = 0;
+  for (char c : countryInput) {
     if (c == ',') {
-      col = 0;
-      row++;
-    } else {
-      country[row][col++] = c - '0';
+      n++;
     }
   }
+  // Count the last row
+  n++;
 
-  // Fill the build cost matrix
-  row = 0;
-  col = 0;
-  for (char c : build_input) {
-    if (c == ',') {
+  // Intialise country, build and destory matrix
+  vector<vector<int>> country(n, vector<int>(n, 0));
+  vector<vector<int>> build(n, vector<int>(n, 0));
+  vector<vector<int>> destroy(n, vector<int>(n, 0));
+
+  // Fill the country, build and destory matrix
+  int row = 0, col = 0;
+  for (int i = 0; i < countryInput.length(); i++) {
+    if (countryInput[i] == ',') {  // if comma is reached, start new row.
       col = 0;
       row++;
     } else {
-      build[row][col++] = charToCost(c);
-    }
-  }
-
-  // Fill the destroy cost matrix
-  row = 0;
-  col = 0;
-  for (char c : destroy_input) {
-    if (c == ',') {
-      col = 0;
-      row++;
-    } else {
-      destroy[row][col++] = charToCost(c);
+      country[row][col] = countryInput[i] - '0';
+      build[row][col] = charToCost(buildInput[i]);
+      destroy[row][col] = charToCost(destroyInput[i]);
+      col++;
     }
   }
 
@@ -90,64 +66,69 @@ int main() {
   vector<bool> visited(n, false);
   vector<vector<int>> components;
 
-  for (int i = 0; i < n; ++i) {
+  for (int i = 0; i < n; i++) {
     if (!visited[i]) {
       vector<int> component;
       dfs(i, country, visited, component);
-      components.push_back(component);
+      components.push_back(component);  // Add each connected component
     }
   }
 
-  // Calculate costs
-  int total_cost = 0;
+  int totalCost = 0;
 
   // For each component, calculate the number of edges and cost of destroying
   // excess edges
-  for (const auto& component : components) {
+  for (int i = 0; i < components.size(); i++) {
+    const auto& component = components[i];
     int edges = 0;
-    vector<int> edge_costs;
+    vector<int> edgeCosts;
 
-    for (int u : component) {
-      for (int v : component) {
-        if (u < v && country[u][v] == 1) {
+    for (int j = 0; j < component.size(); j++) {
+      int u = component[j];
+      for (int k = j + 1; k < component.size();
+           k++) {  // Start from j + 1 to avoid duplicates
+        int v = component[k];
+        if (country[u][v] == 1) {
           edges++;
-          edge_costs.push_back(destroy[u][v]);
+          edgeCosts.push_back(
+              destroy[u][v]);  // Keep track of potential road deletions
         }
       }
     }
 
-    // If the number of edges is more than (size - 1), we need to destroy roads
-    int component_size = component.size();
-    int needed_edges = component_size - 1;
+    // Calculate excess roads (edges - neededEdges), and destroy extras.
+    int componentSize = component.size();
+    int neededEdges = componentSize - 1;
 
-    if (edges > needed_edges) {
-      sort(edge_costs.begin(), edge_costs.end());
-      for (int i = 0; i < edges - needed_edges; ++i) {
-        total_cost += edge_costs[i];
+    if (edges > neededEdges) {
+      sort(edgeCosts.begin(), edgeCosts.end());  // Sort destruction costs
+      for (int i = 0; i < edges - neededEdges; i++) {
+        totalCost = totalCost + edgeCosts[i];  // Add cost of destroying roads
       }
     }
   }
 
-  // Connect components
-  int num_components = components.size();
-  vector<int> min_edge_cost(num_components, numeric_limits<int>::max());
+  // Connect components to get all of them in a single connected compoenet.
+  int numComponents = components.size();
+  vector<int> minEdgeCost(numComponents, numeric_limits<int>::max());
 
-  for (int i = 0; i < num_components; ++i) {
-    for (int j = i + 1; j < num_components; ++j) {
-      // Try to connect component i and j
+  for (int i = 0; i < numComponents; i++) {
+    for (int j = i + 1; j < numComponents; j++) {
+      // Get min cost to connect component i and j
       for (int u : components[i]) {
         for (int v : components[j]) {
-          min_edge_cost[j] = min(min_edge_cost[j], build[u][v]);
+          minEdgeCost[j] = min(minEdgeCost[j], build[u][v]);
         }
       }
     }
   }
 
-  for (int i = 1; i < num_components; ++i) {
-    total_cost += min_edge_cost[i];
+  // Add cost of building roads to total cost
+  for (int i = 1; i < numComponents; i++) {
+    totalCost = totalCost + minEdgeCost[i];
   }
 
-  cout << total_cost << endl;
+  cout << totalCost << endl;
 
   return 0;
 }
